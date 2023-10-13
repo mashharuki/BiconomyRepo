@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "npx nodemon",
     "dev2": "npx ts-node ./src/sample2.ts",
-    "dev3": "npx ts-node ./src/sample3.ts"
+    "dev3": "npx ts-node ./src/sample3.ts",
+    "dev4": "npx ts-node ./src/sample4.ts"
   },
   "keywords": [],
   "author": "",
