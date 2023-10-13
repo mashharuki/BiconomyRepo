@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "npx nodemon",
-    "dev2": "npx ts-node ./src/sample2.ts"
+    "dev2": "npx ts-node ./src/sample2.ts",
+    "dev3": "npx ts-node ./src/sample3.ts"
   },
   "keywords": [],
   "author": "",

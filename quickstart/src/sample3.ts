@@ -7,8 +7,9 @@ import {
   BiconomyPaymaster,
   IHybridPaymaster,
   IPaymaster,
+  PaymasterFeeQuote,
   PaymasterMode,
-  SponsorUserOperationDto,
+  SponsorUserOperationDto
 } from '@biconomy/paymaster';
 import { config } from "dotenv";
 import { Wallet, ethers, providers } from 'ethers';
@@ -81,27 +82,46 @@ async function mintNFT() {
   };
 
   console.log("creating nft mint userop")
-  let partialUserOp = await smartAccount.buildUserOp([transaction, transaction]);
+  let partialUserOp = await smartAccount.buildUserOp([transaction]);
 
+  let finalUserOp = partialUserOp;
   const biconomyPaymaster = smartAccount.paymaster as IHybridPaymaster<SponsorUserOperationDto>;
 
-  let paymasterServiceData: SponsorUserOperationDto = {
-    mode: PaymasterMode.SPONSORED,
-    smartAccountInfo: {
-      name: 'BICONOMY',
-      version: '2.0.0'
-    },
-    calculateGasLimits: true
+  const feeQuotesResponse = await biconomyPaymaster.getPaymasterFeeQuotesOrData(
+    partialUserOp,
+    {
+      mode: PaymasterMode.ERC20,
+      tokenList: ["0xda5289fcaaf71d52a80a254da614a192b693e977"],
+    }
+  );
+
+  const feeQuotes = feeQuotesResponse.feeQuotes as PaymasterFeeQuote[];
+  const spender = feeQuotesResponse.tokenPaymasterAddress || "";
+  const usdcFeeQuotes = feeQuotes[0];
+
+
+  finalUserOp = await smartAccount.buildTokenPaymasterUserOp(partialUserOp, {
+    feeQuote: usdcFeeQuotes,
+    spender: spender,
+    maxApproval: false,
+  });
+
+  console.log("usdcFeeQuotes.tokenAddress:", usdcFeeQuotes.tokenAddress)
+
+  let paymasterServiceData = {
+    mode: PaymasterMode.ERC20,
+    feeTokenAddress: usdcFeeQuotes.tokenAddress,
+    calculateGasLimits: true, 
   };
 
   try {
     console.log("getting paymaster and data")
     const paymasterAndDataResponse =
       await biconomyPaymaster.getPaymasterAndData(
-        partialUserOp,
+        finalUserOp,
         paymasterServiceData
       );
-    partialUserOp.paymasterAndData = paymasterAndDataResponse.paymasterAndData;
+    finalUserOp.paymasterAndData = paymasterAndDataResponse.paymasterAndData;
     console.log("paymasterAndDataResponse: ", paymasterAndDataResponse);
   
     if (
@@ -109,11 +129,9 @@ async function mintNFT() {
       paymasterAndDataResponse.verificationGasLimit &&
       paymasterAndDataResponse.preVerificationGas
     ) {
-      partialUserOp.callGasLimit = paymasterAndDataResponse.callGasLimit;
-      partialUserOp.verificationGasLimit =
-      paymasterAndDataResponse.verificationGasLimit;
-      partialUserOp.preVerificationGas =
-      paymasterAndDataResponse.preVerificationGas;
+      finalUserOp.callGasLimit = paymasterAndDataResponse.callGasLimit;
+      finalUserOp.verificationGasLimit = paymasterAndDataResponse.verificationGasLimit;
+      finalUserOp.preVerificationGas = paymasterAndDataResponse.preVerificationGas;
     }
   } catch (e) {
     console.log("error received ", e);
@@ -122,7 +140,7 @@ async function mintNFT() {
   console.log("sending userop")
   try {
     // send op
-    const userOpResponse = await smartAccount.sendUserOp(partialUserOp);
+    const userOpResponse = await smartAccount.sendUserOp(finalUserOp);
     const transactionDetails = await userOpResponse.wait();
 
     console.log(
