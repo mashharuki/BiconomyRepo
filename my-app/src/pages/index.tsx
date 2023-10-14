@@ -39,7 +39,7 @@ export default function Home() {
     const authMethod = await authenticateWithWebAuthn();
     // get PKPS 
     const pkp = await getPKPs(authMethod!);
-    // const sessionSigs = await initSession(authMethod!, pkp[0]);
+    //const sessionSigs = await initSession(authMethod!, pkp[0]);
     // get new pkpWallet
     const newPkpWallet = await getPkpWallet(pkp[0].publicKey);
 
@@ -66,7 +66,7 @@ export default function Home() {
       const pkp = await getPKPs(authMethod!);
       const sessionSigs = await initSession(authMethod!, pkp[0]);
       // get new pkpWallet
-      const newPkpWallet = await getPkpWallet(pkp[0].publicKey, sessionSigs!);
+      const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
 
       // create smartWallet
       const {

@@ -11,7 +11,7 @@ export const initSession = async (
 ): Promise<any> => {
   try {
     // Prepare session sigs params
-    const chain = 'ethereum';
+    const chain = 'baseGoerli';
     const resourceAbilities = [
       {
         resource: new LitActionResource('*'),
@@ -21,6 +21,9 @@ export const initSession = async (
     const expiration = new Date(
       Date.now() + 1000 * 60 * 60 * 24 * 7
     ).toISOString(); // 1 week
+
+    console.log("authMethod;", authMethod);
+    console.log("pkp;", pkp);
 
     // Generate session sigs
     const sessionSigs = await getSessionSigs({
