@@ -1,0 +1,84 @@
+
+import { mintNft } from '@/hooks/biconomy';
+import styles from '@/styles/Home.module.css';
+import { BiconomySmartAccountV2 } from "@biconomy/account";
+import { ethers } from "ethers";
+import { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
+const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc"
+
+interface Props {
+  smartAccount: BiconomySmartAccountV2,
+  address: string,
+  provider: ethers.providers.Provider,
+}
+
+/**
+ * Minter Component
+ * @param param0 
+ * @returns 
+ */
+const Minter: React.FC<Props> = ({ smartAccount, address, provider }) => {
+  const [minted, setMinted] = useState<boolean>(false)
+
+  /**
+   * handleMint
+   */
+  const handleMint = async () => {
+    toast.info('Minting your NFT...', {
+      position: "top-right",
+      autoClose: 15000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+     });
+
+    // call mintNFT method
+    const transactionHash = await mintNft(
+      smartAccount, 
+      address, 
+      provider, 
+      nftAddress
+    );
+
+    setMinted(true)
+
+    toast.success(`Success! Here is your transaction:${transactionHash} `, {
+      position: "top-right",
+      autoClose: 18000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+      theme: "dark",
+    });
+  }
+
+
+  return(
+    <>
+      {address && <button onClick={handleMint} className={styles.connect}>Mint NFT</button>}
+      {minted && <a href={`https://testnets.opensea.io/${address}`}> Click to view minted nfts for smart account</a>}
+      <ToastContainer
+        position="top-right"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="dark"
+      />
+    </>
+  )
+}
+
+export default Minter;
