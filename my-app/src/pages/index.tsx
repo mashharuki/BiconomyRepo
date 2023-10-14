@@ -24,7 +24,7 @@ export default function Home() {
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
   const [biconomyService, setbiconomyService] = useState<Biconomy | null>(null);
   const [litService, setLitService] = useState<Lit | null>(null);
-  const [chainId, setChainId] = useState<number>(ChainId.BASE_GOERLI_TESTNET)
+  const [chainId, setChainId] = useState<number>(ChainId.AVALANCHE_TESTNET)
 
   /**
    * signUp
