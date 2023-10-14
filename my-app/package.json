@@ -27,6 +27,7 @@
     "next": "13.5.4",
     "react": "^18",
     "react-dom": "^18",
+    "react-loading-indicators": "0.1.1",
     "react-toastify": "^9.1.3",
     "yarn": "^1.22.19"
   },

@@ -1,6 +1,6 @@
+import Loading from '@/components/Loading';
 import Minter from '@/components/Minter';
 import { createSmartWallet } from '@/hooks/biconomy';
-import { initSession } from '@/hooks/useSession';
 import styles from '@/styles/Home.module.css';
 import { BiconomySmartAccountV2 } from "@biconomy/account";
 import {
@@ -64,7 +64,6 @@ export default function Home() {
       const authMethod = await authenticateWithWebAuthn();
       // get PKPS 
       const pkp = await getPKPs(authMethod!);
-      const sessionSigs = await initSession(authMethod!, pkp[0]);
       // get new pkpWallet
       const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
 
@@ -92,11 +91,31 @@ export default function Home() {
       <main className={styles.main}>
         <h1>Based Account Abstraction</h1>
         <h2>Connect and Mint your AA powered NFT now</h2>
-        {!loading && !address && <button onClick={signUp} className={styles.connect}>Sign Up</button>}
-        {!loading && !address && <button onClick={signIn} className={styles.connect}>Sign In</button>}
-        {loading && <p>Loading Smart Account...</p>}
+        {!loading && !address && (
+          <button 
+            onClick={signUp} 
+            className={styles.connect}
+          >
+            Sign Up
+          </button>
+        )}
+        {!loading && !address && (
+          <button 
+            onClick={signIn} 
+            className={styles.connect}
+          >
+            Sign In
+          </button>
+        )}
+        {loading && <p><Loading/></p>}
         {address && <h2>Smart Account: {address}</h2>}
-        {smartAccount && provider && <Minter smartAccount={smartAccount} address={address} provider={provider} />}
+        {smartAccount && provider && (
+          <Minter 
+            smartAccount={smartAccount} 
+            address={address} 
+            provider={provider} 
+          />
+        )}
       </main>
     </>
   )
