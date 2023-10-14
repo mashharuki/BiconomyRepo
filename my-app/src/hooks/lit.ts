@@ -8,11 +8,10 @@ import {
 import { LitNodeClientNodeJs } from "@lit-protocol/lit-node-client-nodejs";
 import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";
 import {
-  AuthCallbackParams,
   AuthMethod,
   GetSessionSigsProps,
   IRelayPKP,
-  SessionSigs,
+  SessionSigs
 } from '@lit-protocol/types';
 
 const litNodeClient = new LitNodeClientNodeJs({
@@ -151,23 +150,6 @@ export async function mintPKP(): Promise<any> {
   
   return claimResp.pubkey;
 }
-
-/**
- * For provisioning keys and setting up authentication methods see documentation below
- * https://developer.litprotocol.com/v2/pkp/minting
- */
-const authNeededCallback = async (params: AuthCallbackParams) => {
-  const response = await litNodeClient.signSessionKey({
-    statement: params.statement,
-    authMethods: [],
-    pkpPublicKey: '04299b3fb4de0c2ed3df36ea31afd8cc59857dd4218aefd8d353ad736dff5595e135abd163e481efbc78f4c8c9b555861db6a6918d967e17193c5bdba46691033a',
-    expiration: params.expiration,
-    resources: params.resources,
-    chainId: 1,
-  });
-  return response.authSig;
-};
-
 
 /**
  * get PKP Wallet method

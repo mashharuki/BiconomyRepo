@@ -1,5 +1,5 @@
 
-import { mintNft } from '@/hooks/biconomy';
+import { Biconomy } from '@/hooks/biconomy';
 import styles from '@/styles/Home.module.css';
 import { BiconomySmartAccountV2 } from "@biconomy/account";
 import { ethers } from "ethers";
@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc"
 
 interface Props {
+  biconomyService: Biconomy,
   smartAccount: BiconomySmartAccountV2,
   address: string,
   provider: ethers.providers.Provider,
@@ -20,7 +21,7 @@ interface Props {
  * @param param0 
  * @returns 
  */
-const Minter: React.FC<Props> = ({ smartAccount, address, provider }) => {
+const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provider }) => {
   const [minted, setMinted] = useState<boolean>(false)
 
   /**
@@ -39,7 +40,7 @@ const Minter: React.FC<Props> = ({ smartAccount, address, provider }) => {
      });
 
     // call mintNFT method
-    const transactionHash = await mintNft(
+    const transactionHash = await biconomyService.mintNft(
       smartAccount, 
       address, 
       provider, 

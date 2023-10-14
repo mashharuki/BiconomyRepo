@@ -1,11 +1,9 @@
 import Loading from '@/components/Loading';
 import Minter from '@/components/Minter';
-import { createSmartWallet } from '@/hooks/biconomy';
+import { Biconomy } from '@/hooks/biconomy';
 import styles from '@/styles/Home.module.css';
 import { BiconomySmartAccountV2 } from "@biconomy/account";
-import {
-  SessionSigs
-} from '@lit-protocol/types';
+import { ChainId } from '@biconomy/core-types';
 import { ethers } from 'ethers';
 import Head from 'next/head';
 import { useState } from "react";
@@ -24,7 +22,7 @@ export default function Home() {
   const [address, setAddress] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false);
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
-  const [sessionSigs, setSessionSigs] = useState<SessionSigs>();
+  const [biconomyService, setbiconomyService] = useState<Biconomy | null>(null);
 
   /**
    * signUp
@@ -39,18 +37,33 @@ export default function Home() {
     const authMethod = await authenticateWithWebAuthn();
     // get PKPS 
     const pkp = await getPKPs(authMethod!);
-    //const sessionSigs = await initSession(authMethod!, pkp[0]);
     // get new pkpWallet
     const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
 
-    // create smartWallet
-    const {
-      smartContractAddress: smartWalletAddress,
-      biconomySmartAccount: smartAccount
-    } = await createSmartWallet(newPkpWallet);
-    
-    setAddress(smartWalletAddress)
-    setSmartAccount(smartAccount)
+    if(biconomyService == null || biconomyService == undefined) {
+      // init Bicnomy isntance
+      const biconomy = new Biconomy();
+      const newBicocomyService = biconomy.create(ChainId.BASE_GOERLI_TESTNET);
+      setbiconomyService(newBicocomyService);
+      // create smartWallet
+      const {
+        smartContractAddress: smartWalletAddress,
+        biconomySmartAccount: smartAccount
+      } = await newBicocomyService!.createSmartWallet(newPkpWallet);
+      
+      setAddress(smartWalletAddress)
+      setSmartAccount(smartAccount)
+    } else {
+      // create smartWallet
+      const {
+        smartContractAddress: smartWalletAddress,
+        biconomySmartAccount: smartAccount
+      } = await biconomyService!.createSmartWallet(newPkpWallet);
+      
+      setAddress(smartWalletAddress)
+      setSmartAccount(smartAccount)
+    }   
+
     setLoading(false)
   }
 
@@ -67,14 +80,31 @@ export default function Home() {
       // get new pkpWallet
       const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
 
-      // create smartWallet
-      const {
-        smartContractAddress: smartWalletAddress,
-        biconomySmartAccount: smartAccount
-      } = await createSmartWallet(newPkpWallet);
-      
-      setAddress(smartWalletAddress)
-      setSmartAccount(smartAccount)
+      if(biconomyService == null || biconomyService == undefined) {
+        // init Bicnomy isntance
+        const biconomy = new Biconomy();
+        const newBicocomyService = biconomy.create(ChainId.BASE_GOERLI_TESTNET);
+        setbiconomyService(newBicocomyService);
+
+        // create smartWallet
+        const {
+          smartContractAddress: smartWalletAddress,
+          biconomySmartAccount: smartAccount
+        } = await newBicocomyService!.createSmartWallet(newPkpWallet);
+        
+        setAddress(smartWalletAddress)
+        setSmartAccount(smartAccount)
+      } else {
+        // create smartWallet
+        const {
+          smartContractAddress: smartWalletAddress,
+          biconomySmartAccount: smartAccount
+        } = await biconomyService!.createSmartWallet(newPkpWallet);
+        
+        setAddress(smartWalletAddress)
+        setSmartAccount(smartAccount)
+      }   
+
       setLoading(false)
     } catch (error) {
       console.error(error);
@@ -85,11 +115,11 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Based Account Abstraction</title>
+        <title>Lit ✖️ biconomy</title>
         <meta name="description" content="Based Account Abstraction" />
       </Head>
       <main className={styles.main}>
-        <h1>Based Account Abstraction</h1>
+        <h1>Lit ✖️ biconomy</h1>
         <h2>Connect and Mint your AA powered NFT now</h2>
         {!loading && !address && (
           <button 
@@ -111,6 +141,7 @@ export default function Home() {
         {address && <h2>Smart Account: {address}</h2>}
         {smartAccount && provider && (
           <Minter 
+            biconomyService={biconomyService!}
             smartAccount={smartAccount} 
             address={address} 
             provider={provider} 
