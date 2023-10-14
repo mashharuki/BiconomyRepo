@@ -43,7 +43,7 @@ export const createSmartWallet = async(signer: Signer) => {
   });
 
   let biconomySmartAccount = await BiconomySmartAccountV2.create({
-    chainId: ChainId.POLYGON_MUMBAI,
+    chainId: ChainId.BASE_GOERLI_TESTNET,
     bundler: bundler, 
     paymaster: paymaster,
     entryPointAddress: DEFAULT_ENTRYPOINT_ADDRESS,

@@ -178,17 +178,6 @@ export async function getPkpWallet(
   // sessionSig: SessionSigs
 ): Promise<PKPEthersWallet> {
 
-  /*
-  const authSig = await checkAndSignAuthMessage({
-    chain: "ethereum",
-    expiration: new Date(
-      Date.now() + 1000 * 60 * 60 * 24 * 7
-    ).toISOString() // 1 week
-  });
-
-  console.log("authSig:", authSig);
-  */
-
   // get sssionSig
   let provider = authClient.getProvider(ProviderType.WebAuthn);
 
