@@ -7,6 +7,7 @@ import {
 } from '@biconomy/paymaster';
 import { Signer } from "ethers";
 
+import { getPayFeesIn } from "@/utils/PayFees";
 import {
   IHybridPaymaster,
   PaymasterMode,
@@ -14,9 +15,12 @@ import {
 } from '@biconomy/paymaster';
 import { ethers } from "ethers";
 import 'react-toastify/dist/ReactToastify.css';
+import { abi as sourceMinterAbi } from "../utils/SourceMinter.json";
 import abi from "../utils/abi.json";
+import { OPGOERLI_CHAIN_SELECTOR, OPGOERLI_SOURCE_MINTER_ADDRESS } from "./../utils/constants";
 
 const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc"
+
 
 /**
  * Biconomy用のクラスファイルです。
@@ -162,5 +166,80 @@ export class Biconomy {
       return;
     }
   } 
+
+  /**
+   * cross chain NFT Mint
+   */
+  crossMintNft = async (
+    smartAccount: BiconomySmartAccountV2, 
+    provider: any, 
+    to: string
+  ) => {
+    // sourceMinter コントラクトのインスタンスを生成
+    const contract = new ethers.Contract(
+      OPGOERLI_SOURCE_MINTER_ADDRESS,
+      sourceMinterAbi,
+      provider,
+    )
+
+    try {
+      // get fee
+      const fee = getPayFeesIn("LINK");
+      // create data
+      const minTx = await contract.interface.encodeFunctionData("mint", [OPGOERLI_CHAIN_SELECTOR, OPGOERLI_SOURCE_MINTER_ADDRESS, fee]);
+      console.log(minTx);
+
+      const tx1 = {
+        to: to,
+        data: minTx,
+      };
+
+      let userOp = await smartAccount.buildUserOp([tx1]);
+      console.log({ userOp })
+      
+      const biconomyPaymaster = smartAccount.paymaster as IHybridPaymaster<SponsorUserOperationDto>;
+      
+      let paymasterServiceData: SponsorUserOperationDto = {
+        mode: PaymasterMode.SPONSORED,
+        smartAccountInfo: {
+          name: 'BICONOMY',
+          version: '2.0.0'
+        },
+        calculateGasLimits: true
+      };
+
+      const paymasterAndDataResponse =
+        await biconomyPaymaster.getPaymasterAndData(
+          userOp,
+          paymasterServiceData
+        );
+
+      userOp.paymasterAndData = paymasterAndDataResponse.paymasterAndData;
+
+      if (
+        paymasterAndDataResponse.callGasLimit &&
+        paymasterAndDataResponse.verificationGasLimit &&
+        paymasterAndDataResponse.preVerificationGas
+      ) {
+        userOp.callGasLimit = paymasterAndDataResponse.callGasLimit;
+        userOp.verificationGasLimit =
+        paymasterAndDataResponse.verificationGasLimit;
+        userOp.preVerificationGas =
+        paymasterAndDataResponse.preVerificationGas;
+      }
+        
+      const userOpResponse = await smartAccount.sendUserOp(userOp);
+      console.log("userOpHash", userOpResponse);
+      
+      const { receipt } = await userOpResponse.wait(1);
+      console.log("txHash", receipt.transactionHash);
+
+      return receipt.transactionHash;
+    } catch (err: any) {
+      console.error("err", err);
+      console.log("err:", err)
+      return;
+    }
+  }
 }
 
