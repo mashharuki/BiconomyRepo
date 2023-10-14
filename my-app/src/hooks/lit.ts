@@ -14,192 +14,215 @@ import {
   SessionSigs
 } from '@lit-protocol/types';
 
-const litNodeClient = new LitNodeClientNodeJs({
-  litNetwork: "cayenne",
-  debug: true,
-});
-
-// Lit用のインスタンスを設定
-const authClient = new LitAuthClient({
-  litRelayConfig: {
-    relayApiKey: process.env.NEXT_PUBLIC_LIT_RELAY_API_KEY,
-  },
-  litNodeClient,
-});
-
-const resourceAbilities = [
-  {
-    resource: new LitActionResource('*'),
-    ability: LitAbility.PKPSigning,
-  },
-];
-
 /**
- * 接続
+ * Lit用のクラスファイルです。
  */
-async function connect() {
-  await litNodeClient.connect();
-}
+export class Lit {
 
-/**
- * Generate session sigs for given params
- */
-export async function getSessionSigs({
-  pkpPublicKey,
-  authMethod,
-  sessionSigsParams,
-}: {
-  pkpPublicKey: string;
-  authMethod: AuthMethod;
-  sessionSigsParams: GetSessionSigsProps;
-}): Promise<SessionSigs> {
-  await connect();
-  const provider = getProviderByAuthMethod(authMethod);
+  private litNodeClient: LitNodeClientNodeJs | null = null;
+  private authClient: LitAuthClient | null = null;
 
-  console.log("provider", provider);
+  /**
+   * Lit用のインスタンスを作成するメソッド
+   */
+  create () {
+    const litService = new Lit();
+    litService.init();
 
-  if (provider) {
-    // get sessionSigs info
-    const sessionSigs = await provider.getSessionSigs({
-      pkpPublicKey,
-      authMethod,
-      sessionSigsParams,
+    return litService;
+  }
+
+  /**
+   * 初期化メソッド
+   */
+  init() {
+    this.litNodeClient = new LitNodeClientNodeJs({
+      litNetwork: "cayenne",
+      debug: true,
     });
-    return sessionSigs;
-  } else {
-    throw new Error(
-      `Provider not found for auth method type ${authMethod.authMethodType}`
-    );
+    
+    var litNodeClient = this.litNodeClient;
+    // Lit用のインスタンスを設定
+    this.authClient = new LitAuthClient({
+      litRelayConfig: {
+        relayApiKey: process.env.NEXT_PUBLIC_LIT_RELAY_API_KEY,
+      },
+      litNodeClient,
+    });
   }
-}
 
-/**
- * Register new WebAuthn credential
- * ✨ very important
- */
-export async function registerWebAuthn(): Promise<IRelayPKP> {
-  await connect();
-  const provider = authClient.initProvider<WebAuthnProvider>(
-    ProviderType.WebAuthn
-  );
-  // Register new WebAuthn credential
-  const options = await provider.register();
-
-  // Verify registration and mint PKP through relay server
-  const txHash = await provider.verifyAndMintPKPThroughRelayer(options);
-  const response = await provider.relay.pollRequestUntilTerminalState(txHash);
-  if (response.status !== 'Succeeded') {
-    throw new Error('Minting failed');
+  /**
+   * 接続
+   */
+  async connect() {
+    await this.litNodeClient!.connect();
   }
-  // RealyPKP型のオブジェクトを生成
-  const newPKP: IRelayPKP = {
-    tokenId: response.pkpTokenId!,
-    publicKey: response.pkpPublicKey!,
-    ethAddress: response.pkpEthAddress!,
-  };
-  return newPKP;
-}
 
-/**
- * Get auth method object by authenticating with a WebAuthn credential
- */
-export async function authenticateWithWebAuthn(): Promise<AuthMethod | undefined> {
-  await connect();
-  let provider = authClient.getProvider(ProviderType.WebAuthn);
+  /**
+   * Generate session sigs for given params
+   */
+  async getSessionSigs({
+    pkpPublicKey,
+    authMethod,
+    sessionSigsParams,
+  }: {
+    pkpPublicKey: string;
+    authMethod: AuthMethod;
+    sessionSigsParams: GetSessionSigsProps;
+  }): Promise<SessionSigs> {
+    await this.connect();
+    const provider = this.getProviderByAuthMethod(authMethod);
 
-  if (!provider) {
-    provider = authClient.initProvider<WebAuthnProvider>(
+    console.log("provider", provider);
+
+    if (provider) {
+      // get sessionSigs info
+      const sessionSigs = await provider.getSessionSigs({
+        pkpPublicKey,
+        authMethod,
+        sessionSigsParams,
+      });
+      return sessionSigs;
+    } else {
+      throw new Error(
+        `Provider not found for auth method type ${authMethod.authMethodType}`
+      );
+    }
+  }
+
+  /**
+   * Register new WebAuthn credential
+   * ✨ very important
+   */
+  async registerWebAuthn(): Promise<IRelayPKP> {
+    await this.connect();
+    const provider = this.authClient!.initProvider<WebAuthnProvider>(
       ProviderType.WebAuthn
     );
+    // Register new WebAuthn credential
+    const options = await provider.register();
+
+    // Verify registration and mint PKP through relay server
+    const txHash = await provider.verifyAndMintPKPThroughRelayer(options);
+    const response = await provider.relay.pollRequestUntilTerminalState(txHash);
+    if (response.status !== 'Succeeded') {
+      throw new Error('Minting failed');
+    }
+    // RealyPKP型のオブジェクトを生成
+    const newPKP: IRelayPKP = {
+      tokenId: response.pkpTokenId!,
+      publicKey: response.pkpPublicKey!,
+      ethAddress: response.pkpEthAddress!,
+    };
+    return newPKP;
   }
-  const authMethod = await provider!.authenticate();
-  return authMethod;
-}
 
-/**
- * Fetch PKPs associated with given auth method
- */
-export async function getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
-  await connect();
-  const provider = getProviderByAuthMethod(authMethod);
-  const pkpInfo = await provider!.fetchPKPsThroughRelayer(authMethod);
-  console.log("pkpInfo:", pkpInfo);
+  /**
+   * Get auth method object by authenticating with a WebAuthn credential
+   */
+  async authenticateWithWebAuthn(): Promise<AuthMethod | undefined> {
+    await this.connect();
+    let provider = this.authClient!.getProvider(ProviderType.WebAuthn);
 
-  return pkpInfo;
-}
+    if (!provider) {
+      provider = this.authClient!.initProvider<WebAuthnProvider>(
+        ProviderType.WebAuthn
+      );
+    }
+    const authMethod = await provider!.authenticate();
+    return authMethod;
+  }
 
-/**
- * Mint a new PKP for current auth method
- */
-export async function mintPKP(): Promise<any> {
-  await connect();
-  const provider = authClient.initProvider<WebAuthnProvider>(
-    ProviderType.WebAuthn
-  );
+  /**
+   * Fetch PKPs associated with given auth method
+   */
+  async getPKPs(authMethod: AuthMethod): Promise<IRelayPKP[]> {
+    await this.connect();
+    const provider = this.getProviderByAuthMethod(authMethod);
+    const pkpInfo = await provider!.fetchPKPsThroughRelayer(authMethod);
+    console.log("pkpInfo:", pkpInfo);
 
-  const authMethod = await provider.authenticate();
-  // get public key
-  const publicKey = await provider.computePublicKeyFromAuthMethod(authMethod);
-  console.log("local public key computed: ", publicKey);
+    return pkpInfo;
+  }
 
-  let claimResp = await provider.claimKeyId({
-    authMethod,
-  });
-  console.log("claim response public key: ", claimResp.pubkey);  
-  console.log("claim : ", claimResp);  
-  
-  return claimResp.pubkey;
-}
+  /**
+   * Mint a new PKP for current auth method
+   */
+  async mintPKP(): Promise<any> {
+    await this.connect();
+    const provider = this.authClient!.initProvider<WebAuthnProvider>(
+      ProviderType.WebAuthn
+    );
 
-/**
- * get PKP Wallet method
- */
-export async function getPkpWallet(
-  pkpPublicKey: any, 
-  authMethod: AuthMethod,
-  // sessionSig: SessionSigs
-): Promise<PKPEthersWallet> {
+    const authMethod = await provider.authenticate();
+    // get public key
+    const publicKey = await provider.computePublicKeyFromAuthMethod(authMethod);
+    console.log("local public key computed: ", publicKey);
 
-  // get sssionSig
-  let provider = authClient.getProvider(ProviderType.WebAuthn);
+    let claimResp = await provider.claimKeyId({
+      authMethod,
+    });
+    console.log("claim response public key: ", claimResp.pubkey);  
+    console.log("claim : ", claimResp);  
+    
+    return claimResp.pubkey;
+  }
 
-  console.log("provider:", provider)
-  console.log("authMethod:", authMethod)
+  /**
+   * get PKP Wallet method
+   */
+  async getPkpWallet(
+    pkpPublicKey: any, 
+    authMethod: AuthMethod,
+    // sessionSig: SessionSigs
+  ): Promise<PKPEthersWallet> {
 
-  const sessionSigs = await provider!.getSessionSigs({
-    authMethod: authMethod,
-    pkpPublicKey: pkpPublicKey,
-    sessionSigsParams: {
-      chain: 'ethereum',
-      resourceAbilityRequests: resourceAbilities,
-    },
-  });
+    // get sssionSig
+    let provider = this.authClient!.getProvider(ProviderType.WebAuthn);
 
-  console.log("sessionSigs:", sessionSigs);
+    console.log("provider:", provider)
+    console.log("authMethod:", authMethod)
 
-  // create PKP instance
-  const pkpWallet = new PKPEthersWallet({
-    pkpPubKey: pkpPublicKey,
-    rpc: RPC_URL,
-    controllerSessionSigs: sessionSigs
-  });
-  await pkpWallet.init();
+    const sessionSigs = await provider!.getSessionSigs({
+      authMethod: authMethod,
+      pkpPublicKey: pkpPublicKey,
+      sessionSigsParams: {
+        chain: 'ethereum',
+        resourceAbilityRequests: [
+          {
+            resource: new LitActionResource('*'),
+            ability: LitAbility.PKPSigning,
+          },
+        ],
+      },
+    });
 
-  console.log("pkpWallet:", pkpWallet);
-  console.log("pkpWallet's address:", await pkpWallet.getAddress());
-  console.log("pkpWallet's add:", await pkpWallet.getAddress());
+    console.log("sessionSigs:", sessionSigs);
 
-  return pkpWallet;
-}
+    // create PKP instance
+    const pkpWallet = new PKPEthersWallet({
+      pkpPubKey: pkpPublicKey,
+      rpc: RPC_URL,
+      controllerSessionSigs: sessionSigs
+    });
+    await pkpWallet.init();
 
-/**
- * Get provider for given auth method
- */
-function getProviderByAuthMethod(authMethod: AuthMethod) {
-  switch (authMethod.authMethodType) {
-    case AuthMethodType.WebAuthn:
-      return authClient.getProvider(ProviderType.WebAuthn);
-    default:
-      return;
+    console.log("pkpWallet:", pkpWallet);
+    console.log("pkpWallet's address:", await pkpWallet.getAddress());
+    console.log("pkpWallet's add:", await pkpWallet.getAddress());
+
+    return pkpWallet;
+  }
+
+  /**
+   * Get provider for given auth method
+   */
+  getProviderByAuthMethod(authMethod: AuthMethod) {
+    switch (authMethod.authMethodType) {
+      case AuthMethodType.WebAuthn:
+        return this.authClient!.getProvider(ProviderType.WebAuthn);
+      default:
+        return;
+    }
   }
 }

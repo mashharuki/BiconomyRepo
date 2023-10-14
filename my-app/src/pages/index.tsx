@@ -7,7 +7,7 @@ import { ChainId } from '@biconomy/core-types';
 import { ethers } from 'ethers';
 import Head from 'next/head';
 import { useState } from "react";
-import { authenticateWithWebAuthn, getPKPs, getPkpWallet, registerWebAuthn } from './../hooks/lit';
+import { Lit } from './../hooks/lit';
 import { RPC_URL } from './../utils/constants';
 
 // base Goerli RPC
@@ -23,46 +23,64 @@ export default function Home() {
   const [loading, setLoading] = useState<boolean>(false);
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
   const [biconomyService, setbiconomyService] = useState<Biconomy | null>(null);
+  const [litService, setLitService] = useState<Lit | null>(null);
+  const [chainId, setChainId] = useState<number>(ChainId.BASE_GOERLI_TESTNET)
 
   /**
    * signUp
    */
   const signUp = async () => {
-    setLoading(true)
-    // register by Webauthn mint pkp (SignUpにあたる)
-    const newPKP = await registerWebAuthn();
-    //const newPKP = await mintPKP();
-    console.log("newPKP:", newPKP);
-    // authicate (SignInにあたる)
-    const authMethod = await authenticateWithWebAuthn();
-    // get PKPS 
-    const pkp = await getPKPs(authMethod!);
-    // get new pkpWallet
-    const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
+    setLoading(true);
+    var newPkpWallet;
+      
+    try {
+      if(litService == null || litService == undefined) {
+        // init lit isntance
+        const lit = new Lit();
+        const newLitService = lit.create();
+        setLitService(newLitService);
 
-    if(biconomyService == null || biconomyService == undefined) {
-      // init Bicnomy isntance
-      const biconomy = new Biconomy();
-      const newBicocomyService = biconomy.create(ChainId.BASE_GOERLI_TESTNET);
-      setbiconomyService(newBicocomyService);
-      // create smartWallet
-      const {
-        smartContractAddress: smartWalletAddress,
-        biconomySmartAccount: smartAccount
-      } = await newBicocomyService!.createSmartWallet(newPkpWallet);
-      
-      setAddress(smartWalletAddress)
-      setSmartAccount(smartAccount)
-    } else {
-      // create smartWallet
-      const {
-        smartContractAddress: smartWalletAddress,
-        biconomySmartAccount: smartAccount
-      } = await biconomyService!.createSmartWallet(newPkpWallet);
-      
-      setAddress(smartWalletAddress)
-      setSmartAccount(smartAccount)
-    }   
+        // authicate (SignInにあたる)
+        const authMethod = await newLitService!.authenticateWithWebAuthn();
+        // get PKPS 
+        const pkp = await newLitService!.getPKPs(authMethod!);
+        // get new pkpWallet
+        newPkpWallet = await newLitService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+      } else {
+        // authicate (SignInにあたる)
+        const authMethod = await litService!.authenticateWithWebAuthn();
+        // get PKPS 
+        const pkp = await litService!.getPKPs(authMethod!);
+        // get new pkpWallet
+        newPkpWallet = await litService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+      }
+
+      if(biconomyService == null || biconomyService == undefined) {
+        // init Bicnomy isntance
+        const biconomy = new Biconomy();
+        const newBicocomyService = biconomy.create(chainId);
+        setbiconomyService(newBicocomyService);
+        // create smartWallet
+        const {
+          smartContractAddress: smartWalletAddress,
+          biconomySmartAccount: smartAccount
+        } = await newBicocomyService!.createSmartWallet(newPkpWallet);
+        
+        setAddress(smartWalletAddress)
+        setSmartAccount(smartAccount)
+      } else {
+        // create smartWallet
+        const {
+          smartContractAddress: smartWalletAddress,
+          biconomySmartAccount: smartAccount
+        } = await biconomyService!.createSmartWallet(newPkpWallet);
+        
+        setAddress(smartWalletAddress)
+        setSmartAccount(smartAccount)
+      }   
+    } catch (error) {
+      console.error(error);
+    }
 
     setLoading(false)
   }
@@ -72,18 +90,34 @@ export default function Home() {
    */
   const signIn = async () => {
     try {
-      setLoading(true)
-      // authicate (SignInにあたる)
-      const authMethod = await authenticateWithWebAuthn();
-      // get PKPS 
-      const pkp = await getPKPs(authMethod!);
-      // get new pkpWallet
-      const newPkpWallet = await getPkpWallet(pkp[0].publicKey, authMethod!);
+      setLoading(true);
+      var newPkpWallet;
+
+      if(litService == null || litService == undefined) {
+        // init lit isntance
+        const lit = new Lit();
+        const newLitService = lit.create();
+        setLitService(newLitService);
+
+        // authicate (SignInにあたる)
+        const authMethod = await newLitService!.authenticateWithWebAuthn();
+        // get PKPS 
+        const pkp = await newLitService!.getPKPs(authMethod!);
+        // get new pkpWallet
+        newPkpWallet = await newLitService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+      } else {
+        // authicate (SignInにあたる)
+        const authMethod = await litService!.authenticateWithWebAuthn();
+        // get PKPS 
+        const pkp = await litService!.getPKPs(authMethod!);
+        // get new pkpWallet
+        newPkpWallet = await litService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+      }
 
       if(biconomyService == null || biconomyService == undefined) {
         // init Bicnomy isntance
         const biconomy = new Biconomy();
-        const newBicocomyService = biconomy.create(ChainId.BASE_GOERLI_TESTNET);
+        const newBicocomyService = biconomy.create(chainId);
         setbiconomyService(newBicocomyService);
 
         // create smartWallet
