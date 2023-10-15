@@ -11,3 +11,4 @@ Biconomy 調査・研究のためのリポジトリです。
 5. [create-a-new-paymaster API](https://docs.biconomy.io/docs/apireference/dashboardapi#2-create-a-new-paymaster)
 6. [Next.js を使ったサンプル](https://docs.biconomy.io/docs/tutorials/nextjs/introduction)
 7. [lit protcol aa sample](https://accountkit.alchemy.com/smart-accounts/signers/lit.html)
+8. [Web3Storage Next.js Sample](https://github.com/web3-storage/web3.storage/tree/main/packages/client/examples/browser/next.js)
