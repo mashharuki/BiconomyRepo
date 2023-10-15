@@ -85,7 +85,7 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
 
     setMinted(true)
 
-    toast.success(`Success! Here is your transaction:${transactionHash} `, {
+    toast.success(`Success! Here is your transaction: https://ccip.chain.link/msg/${transactionHash} `, {
       position: "top-right",
       autoClose: 18000,
       hideProgressBar: false,

@@ -187,7 +187,7 @@ export class Biconomy {
       const fee = getPayFeesIn("LINK");
       // create data
       // const minTx = await contract.interface.encodeFunctionData("mint", [OPGOERLI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS, fee]);
-      const minTx = await contract.interface.encodeFunctionData("mint", [MUMBAI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS, to, fee]);
+      const minTx = await contract.interface.encodeFunctionData("mint", [MUMBAI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS, fee]);
       console.log(minTx);
 
       const tx1 = {
@@ -234,7 +234,8 @@ export class Biconomy {
       
       const { receipt } = await userOpResponse.wait(1);
       console.log("txHash", receipt.transactionHash);
-
+      console.log(`CCIP Explorer Link:  https://ccip.chain.link/msg/${receipt.transactionHash}`)
+     
       return receipt.transactionHash;
     } catch (err: any) {
       console.error("err", err);
