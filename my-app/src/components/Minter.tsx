@@ -6,7 +6,6 @@ import { ethers } from "ethers";
 import { useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { OPGOERLI_SOURCE_MINTER_ADDRESS } from "./../utils/constants";
 
 const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc";
 
@@ -81,7 +80,7 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
     const transactionHash = await biconomyService.crossMintNft(
       smartAccount, 
       provider, 
-      OPGOERLI_SOURCE_MINTER_ADDRESS
+      address
     );
 
     setMinted(true)

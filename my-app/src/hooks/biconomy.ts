@@ -17,7 +17,7 @@ import { ethers } from "ethers";
 import 'react-toastify/dist/ReactToastify.css';
 import { abi as sourceMinterAbi } from "../utils/SourceMinter.json";
 import abi from "../utils/abi.json";
-import { OPGOERLI_CHAIN_SELECTOR, OPGOERLI_SOURCE_MINTER_ADDRESS } from "./../utils/constants";
+import { MUMBAI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS } from "./../utils/constants";
 
 const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc"
 
@@ -177,7 +177,7 @@ export class Biconomy {
   ) => {
     // sourceMinter コントラクトのインスタンスを生成
     const contract = new ethers.Contract(
-      OPGOERLI_SOURCE_MINTER_ADDRESS,
+      SOURCE_MINTER_ADDRESS,
       sourceMinterAbi,
       provider,
     )
@@ -186,11 +186,12 @@ export class Biconomy {
       // get fee
       const fee = getPayFeesIn("LINK");
       // create data
-      const minTx = await contract.interface.encodeFunctionData("mint", [OPGOERLI_CHAIN_SELECTOR, OPGOERLI_SOURCE_MINTER_ADDRESS, fee]);
+      // const minTx = await contract.interface.encodeFunctionData("mint", [OPGOERLI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS, fee]);
+      const minTx = await contract.interface.encodeFunctionData("mint", [MUMBAI_CHAIN_SELECTOR, SOURCE_MINTER_ADDRESS, to, fee]);
       console.log(minTx);
 
       const tx1 = {
-        to: to,
+        to: SOURCE_MINTER_ADDRESS,
         data: minTx,
       };
 
