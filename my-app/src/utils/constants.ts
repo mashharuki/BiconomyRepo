@@ -5,7 +5,7 @@ export const OPGOERLI_CHAIN_SELECTOR = "2664363617261496610";
 // Mumbai destinationChainSelector
 export const MUMBAI_CHAIN_SELECTOR = "12532609583862916517";
 // sourceMinter Contract Address
-export const SOURCE_MINTER_ADDRESS = "0x9bE9aC69125c5dEcd0BD14AC15A1872431aF7e15";
+export const SOURCE_MINTER_ADDRESS = "0xbF2e8A35484f23491F262fcc9151fab7400Abd9E";
 
 export enum PayFeesIn {
   Native,
