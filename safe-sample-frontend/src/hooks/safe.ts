@@ -9,7 +9,7 @@ import { GelatoRelayPack } from '@safe-global/relay-kit';
 import { MetaTransactionData, MetaTransactionOptions, OperationType, RelayTransaction } from '@safe-global/safe-core-sdk-types';
 import { ethers } from 'ethers';
 import { NFT_ADDRESS, RPC_URL, TX_SERVICE_URL } from '../utils/constants';
-import { abi } from './../contract/artifacts/contracts/MyNFT.sol/MyNFT.json';
+import { abi } from './../../src/utils/MyNFT.json';
 
 // base Goerli RPC
 const rpc_url = RPC_URL;
@@ -21,15 +21,17 @@ const contract = new ethers.utils.Interface(abi);
 /**
  * init ProtocolKit instance
  */
-export const initProtocolKit = async(owner: any) => {
+export const initProtocolKit = async() => {
   // Initialize signers
   // ここはWeb3authかlitで持ってくる。
   const owner1Signer = new ethers.Wallet(process.env.NEXT_PUBLIC_OWNER_1_PRIVATE_KEY!, provider);
-  
+  const pkpWalletAddress = "0x1a29B04E144e0EC9ECA49851e65F589877a47268" // pkp wallet address
+
   // SafeAccount作成のための設定
   const safeAccountConfig: SafeAccountConfig = {
     owners: [
-      owner
+      await owner1Signer.getAddress(),
+      pkpWalletAddress
     ],
     threshold: 1,
   }
@@ -37,7 +39,7 @@ export const initProtocolKit = async(owner: any) => {
   // create EtherAdapter instance
   const ethAdapterOwner = new EthersAdapter({
     ethers,
-    signerOrProvider: owner1Signer || provider
+    signerOrProvider: owner1Signer
   });
 
   console.log("ethAdapterOwner:", ethAdapterOwner);
@@ -71,15 +73,13 @@ export const initProtocolKit = async(owner: any) => {
   });
 
   // 生成済みのsafeAccounts一覧を取得するメソッド
-  const safes = await safeService.getSafesByOwner(owner);
+  const safes = await safeService.getSafesByOwner(pkpWalletAddress);
   console.log("safes:", safes.safes);
-
 
   var safeSdkOwner1;
   var safeAddress;
 
   // 一つも生成されていない場合には新規で作成それ以外の場合は作成ずみのSafeAccoutをアドレスとして詰める。
-  // create new safe by sign 
   if(safes.safes.length == 0) {
     // deploy safe account
     safeSdkOwner1 = await safeFactory.deploySafe({ 
@@ -114,14 +114,14 @@ export const initProtocolKit = async(owner: any) => {
     ethAdapterOwner,
     safeAddress,
     safeSdk,
-    senderAddress: owner
+    senderAddress: owner1Signer
   };
 };
 
 /**
  * init SafeApiKit instance
  */
-export const initSafeApiKit = async(owner: string) => {
+export const initSafeApiKit = async() => {
   const txServiceUrl = TX_SERVICE_URL;
   // create eth adapter instance
   const { 
@@ -129,9 +129,8 @@ export const initSafeApiKit = async(owner: string) => {
     safeAddress,
     safeSdk,
     senderAddress
-  } = await initProtocolKit(owner);
-1
-  /*
+  } = await initProtocolKit();
+
   const safeService = new SafeApiKit({ 
     txServiceUrl, 
     ethAdapter 
@@ -141,14 +140,43 @@ export const initSafeApiKit = async(owner: string) => {
 
   const nonce = await safeService.getNextNonce(safeAddress!);
   console.log("safeAddress's nonce:", nonce);
-  */
 
   return {
+    safeService,
     ethAdapter,
     safeAddress,
     safeSdk,
     senderAddress
   };
+};
+
+/**
+ * 送信用のトランザクションデータをpropseするためのメソッド
+ */
+const proposeTx = async(
+  safeSdk: any,
+  safeService: any,
+  safeAddress: any,
+  senderAddress: any,
+  safeTransaction: any
+) => {
+  const safeTxHash = await safeSdk.getTransactionHash(safeTransaction);
+  const senderSignature = await safeSdk.signTransactionHash(safeTxHash);
+
+  // call proposeTransaction method
+  const result = await safeService.proposeTransaction({
+    safeAddress,
+    safeTransactionData: safeTransaction.data,
+    safeTxHash,
+    senderAddress,
+    senderSignature: senderSignature.data
+  });
+
+  console.log("proposeTransaction result:", result);
+
+  // この時点で proxy Contractが作られる。
+
+  return result;
 };
 
 /**
@@ -163,9 +191,6 @@ export const createSendTx = async(safeSdk: any, recipient: string, amount: strin
     value: ethers.utils.parseUnits(amount, 'ether').toString(),
     operation: OperationType.Call
   };
-
-  // 理想は署名までlit側でやる。
-  // 署名済みのやつを作る。
 
   const safeTransaction = await safeSdk.createTransaction({ safeTransactionData });
   // トランザクションを署名

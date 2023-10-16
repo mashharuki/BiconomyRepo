@@ -2,10 +2,9 @@ import ActionButton from "@/components/ActionButton";
 import Address from "@/components/Address";
 import Console from "@/components/Console";
 import LoadingIndicator from "@/components/LoadingIndicator";
-import { Signer, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import { useState } from "react";
-import { authenticateWithWebAuthn, getPKPs, getPkpWallet, registerWebAuthn } from './../hooks/lit';
-import { initSafeApiKit, mintNftTx, sendEthTx } from './../hooks/safe';
+import { initSafeApiKit, mintNftTx, sendEthTx } from '../hooks/safe';
 
 /**
  * Home Component
@@ -18,7 +17,6 @@ export default function Home() {
   const [safeSdk, setSafeSdk] = useState<any | null>(null);
   const [safeService, setSafeService] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pkpWallet, setPkpWallet] = useState<Signer>();
   const [events, setEvents] = useState<string[]>([
     `A sample application to demonstrate how to work Safe Contract.`,
   ]);
@@ -40,23 +38,12 @@ export default function Home() {
 
     // craete Safe Account
     try {
-      // register by Webauthn mint pkp (SignUpにあたる)
-      const newPKP = await registerWebAuthn();
-      //const newPKP = await mintPKP();
-      console.log("newPKP:", newPKP);
-      // authicate (SignInにあたる)
-      const authMethod = await authenticateWithWebAuthn();
-      // get PKPS 
-      const pkp = await getPKPs(authMethod!);
-      // get new pkpWallet
-      const newPkpWallet = await getPkpWallet(pkp[0].publicKey);
-      setPkpWallet(newPkpWallet);
-      
       const {
+        safeService,
         safeAddress,
         safeSdk,
         senderAddress
-      } = await initSafeApiKit(pkp[0].ethAddress);
+      } = await initSafeApiKit();
 
       setAddress(safeAddress!);
       setSafeSdk(safeSdk);
