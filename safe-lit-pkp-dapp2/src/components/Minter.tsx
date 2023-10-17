@@ -89,20 +89,19 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
           }
         </>
       )}
+      {address && <button onClick={handleMint} className={styles.connect}>Sign</button>}
       {address && (
         <div>
           <Document 
-            file={'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf'} 
+            file={'https://bafybeibawd4uszujdype4emondxzksmbsxputel6tip5ocgr3plv746z3e.ipfs.dweb.link/SIMPLE%20CONTRACT%20AGREEMENT.pdf'} 
             onLoadSuccess={onDocumentLoadSuccess}
-            className='w-8'
           >
             <div style={{ border: 'solid 1px gray'}}>
-              <Page height={400} pageNumber={numPages} />
+              <Page height={2500} pageNumber={numPages} />
             </div>
           </Document>
         </div>
       )}
-      {address && <button onClick={handleMint} className={styles.connect}>Sign</button>}
       <ToastContainer
         position="top-right"
         autoClose={5000}
