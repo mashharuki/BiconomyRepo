@@ -1,17 +1,16 @@
 import Loading from '@/components/Loading';
 import Minter from '@/components/Minter';
-import { Biconomy } from '@/hooks/biconomy';
 import styles from '@/styles/Home.module.css';
-import { BiconomySmartAccountV2 } from "@biconomy/account";
 import { ChainId } from '@biconomy/core-types';
+import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';
 import { ethers } from 'ethers';
 import Head from 'next/head';
 import { useState } from "react";
 import { useQuery } from 'urql';
 import query from '../graphql/query';
-import { Lit } from './../hooks/lit';
-import { RPC_URL } from './../utils/constants';
-import { SignContractInfos } from './../utils/types';
+import { Lit } from '../hooks/lit';
+import { RPC_URL } from '../utils/constants';
+import { SignContractInfos } from '../utils/types';
 
 /**
  * Home Component
@@ -20,18 +19,22 @@ import { SignContractInfos } from './../utils/types';
 export default function Home() { 
   const [address, setAddress] = useState<string>("")
   const [loading, setLoading] = useState<boolean>(false);
-  const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
-  const [biconomyService, setbiconomyService] = useState<Biconomy | null>(null);
   const [litService, setLitService] = useState<Lit | null>(null);
   const [chainId, setChainId] = useState<number>(ChainId.BASE_GOERLI_TESTNET)
+  const [pkpWallet, setPkpWallet] = useState<PKPEthersWallet | null>(null)
+
+  // signId
+  const signId = 1;
 
   // execute subgraph query
-  const [result] = useQuery({ query });
+  const [result] = useQuery({ 
+    query,
+    variables: { signId },
+  });
   const { data, fetching, error } = result;
   const queryResult: SignContractInfos = data;
 
   console.log("data:", queryResult)
-
   // base base Goerli RPC
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
@@ -55,6 +58,9 @@ export default function Home() {
         const pkp = await newLitService!.getPKPs(authMethod!);
         // get new pkpWallet
         newPkpWallet = await newLitService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+
+        setAddress(pkp[0].ethAddress);
+        setPkpWallet(newPkpWallet);
       } else {
         // authicate (SignInにあたる)
         const authMethod = await litService!.authenticateWithWebAuthn();
@@ -62,31 +68,10 @@ export default function Home() {
         const pkp = await litService!.getPKPs(authMethod!);
         // get new pkpWallet
         newPkpWallet = await litService!.getPkpWallet(pkp[0].publicKey, authMethod!);
-      }
 
-      if(biconomyService == null || biconomyService == undefined) {
-        // init Bicnomy isntance
-        const biconomy = new Biconomy();
-        const newBicocomyService = biconomy.create(chainId);
-        setbiconomyService(newBicocomyService);
-        // create smartWallet
-        const {
-          smartContractAddress: smartWalletAddress,
-          biconomySmartAccount: smartAccount
-        } = await newBicocomyService!.createSmartWallet(newPkpWallet);
-        
-        setAddress(smartWalletAddress)
-        setSmartAccount(smartAccount)
-      } else {
-        // create smartWallet
-        const {
-          smartContractAddress: smartWalletAddress,
-          biconomySmartAccount: smartAccount
-        } = await biconomyService!.createSmartWallet(newPkpWallet);
-        
-        setAddress(smartWalletAddress)
-        setSmartAccount(smartAccount)
-      }   
+        setAddress(pkp[0].ethAddress);
+        setPkpWallet(newPkpWallet);
+      }
     } catch (error) {
       console.error(error);
     }
@@ -114,6 +99,9 @@ export default function Home() {
         const pkp = await newLitService!.getPKPs(authMethod!);
         // get new pkpWallet
         newPkpWallet = await newLitService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+
+        setAddress(pkp[0].ethAddress);
+        setPkpWallet(newPkpWallet);
       } else {
         // authicate (SignInにあたる)
         const authMethod = await litService!.authenticateWithWebAuthn();
@@ -121,32 +109,10 @@ export default function Home() {
         const pkp = await litService!.getPKPs(authMethod!);
         // get new pkpWallet
         newPkpWallet = await litService!.getPkpWallet(pkp[0].publicKey, authMethod!);
+
+        setAddress(pkp[0].ethAddress);
+        setPkpWallet(newPkpWallet);
       }
-
-      if(biconomyService == null || biconomyService == undefined) {
-        // init Bicnomy isntance
-        const biconomy = new Biconomy();
-        const newBicocomyService = biconomy.create(chainId);
-        setbiconomyService(newBicocomyService);
-
-        // create smartWallet
-        const {
-          smartContractAddress: smartWalletAddress,
-          biconomySmartAccount: smartAccount
-        } = await newBicocomyService!.createSmartWallet(newPkpWallet);
-        
-        setAddress(smartWalletAddress)
-        setSmartAccount(smartAccount)
-      } else {
-        // create smartWallet
-        const {
-          smartContractAddress: smartWalletAddress,
-          biconomySmartAccount: smartAccount
-        } = await biconomyService!.createSmartWallet(newPkpWallet);
-        
-        setAddress(smartWalletAddress)
-        setSmartAccount(smartAccount)
-      }   
 
       setLoading(false)
     } catch (error) {
@@ -157,11 +123,11 @@ export default function Home() {
   return (
     <>
       <Head>
-        <title>Lit ✖️ biconomy</title>
+        <title>Lit ✖️ biconomy ✖️ The Graph</title>
         <meta name="description" content="Based Account Abstraction" />
       </Head>
       <main className={styles.main}>
-        <h1>Lit ✖️ Safe ✖️ The Graph ✖️ biconomy</h1>
+        <h1>Lit ✖️ Safe ✖️ The Graph</h1>
         <h2>Connect and Sign Contract </h2>
         {!loading && !address && (
           <button 
@@ -182,11 +148,12 @@ export default function Home() {
         {(loading || fetching ) && <Loading/>}
         {address && <h2>Smart Account: {address}</h2>}
         <>
-          { data !== undefined && smartAccount && provider && (
+          { data !== undefined && address && provider && (
             <Minter 
-              biconomyService={biconomyService!}
-              smartAccount={smartAccount} 
               address={address} 
+              signId={signId}
+              pkpWallet={pkpWallet!}
+              chainId={chainId}
               provider={provider} 
               data={queryResult}
             />

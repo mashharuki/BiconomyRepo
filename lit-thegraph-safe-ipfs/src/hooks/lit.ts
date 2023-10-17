@@ -2,16 +2,16 @@ import { RPC_URL } from "@/utils/constants";
 import { LitAbility, LitActionResource } from '@lit-protocol/auth-helpers';
 import { AuthMethodType, ProviderType } from "@lit-protocol/constants";
 import {
-  LitAuthClient,
-  WebAuthnProvider,
-} from "@lit-protocol/lit-auth-client/src/index.js";
+    LitAuthClient,
+    WebAuthnProvider,
+} from "@lit-protocol/lit-auth-client";
 import { LitNodeClientNodeJs } from "@lit-protocol/lit-node-client-nodejs";
 import { PKPEthersWallet } from "@lit-protocol/pkp-ethers";
 import {
-  AuthMethod,
-  GetSessionSigsProps,
-  IRelayPKP,
-  SessionSigs
+    AuthMethod,
+    GetSessionSigsProps,
+    IRelayPKP,
+    SessionSigs
 } from '@lit-protocol/types';
 
 /**

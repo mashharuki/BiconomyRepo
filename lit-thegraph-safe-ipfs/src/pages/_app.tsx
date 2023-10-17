@@ -1,7 +1,7 @@
 import '@/styles/globals.css';
 import type { AppProps } from 'next/app';
 import { Client, Provider, cacheExchange, fetchExchange } from 'urql';
-import { GRAPHQL_API_ENDPOINT } from "./../utils/constants";
+import { GRAPHQL_API_ENDPOINT } from "../utils/constants";
 
 
 // create client instance for GraphQL

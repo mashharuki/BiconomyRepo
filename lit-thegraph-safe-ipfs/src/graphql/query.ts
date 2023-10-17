@@ -2,11 +2,11 @@ import { gql } from 'urql';
 
 // subgraph query
 const query = gql`
-  query MyQuery {
+  query MyQuery($signId: Int!) {
     signContractCreateds(
       orderBy: signId, 
       orderDirection: desc, 
-      where: {signId: "0"}
+      where: {signId: $signId}
     ) {
       appId
       name
@@ -20,7 +20,7 @@ const query = gql`
     changeApproveStatuses(
       orderBy: signId, 
       orderDirection: desc,
-      where: {signId: "0"}  
+      where: {signId: $signId}  
     ) {
       appId
       receipeId
@@ -30,7 +30,7 @@ const query = gql`
     signatureAddeds(
       orderBy: signId, 
       orderDirection: desc,
-      where: {signId: "0"}  
+      where: {signId: $signId}  
     ) {
       appId
       receipeId

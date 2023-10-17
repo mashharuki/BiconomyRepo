@@ -1,23 +1,23 @@
 
-import { Biconomy } from '@/hooks/biconomy';
 import styles from '@/styles/Home.module.css';
-import { BiconomySmartAccountV2 } from "@biconomy/account";
+import { PKPEthersWallet } from '@lit-protocol/pkp-ethers';
 import { ethers } from "ethers";
 import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import pdfjsWorkerSrc from '../../pdf-worker';
-import { SignContractInfos } from './../utils/types';
+import { addSigNature } from '../hooks/safe';
+import { SignContractInfos } from '../utils/types';
 
 pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc;
 
-const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc";
 
 interface Props {
-  biconomyService: Biconomy,
-  smartAccount: BiconomySmartAccountV2,
   address: string,
+  signId: number,
+  pkpWallet: PKPEthersWallet,
+  chainId: number,
   provider: ethers.providers.Provider,
   data: SignContractInfos
 }
@@ -27,12 +27,9 @@ interface Props {
  * @param param0 
  * @returns 
  */
-const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provider, data }) => {
+const Minter: React.FC<Props> = ({ address, pkpWallet, signId, provider, chainId, data }) => {
   const [minted, setMinted] = useState<boolean>(false)
   const [numPages, setNumPages] = useState(1);
-
-  console.log("safeAddress:", data.signContractCreateds[0].safeAddress)
-  console.log("url:", data.signContractCreateds[0].uri)
 
   /**
    * handleMint
@@ -49,17 +46,27 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
       theme: "dark",
      });
 
-    // call mintNFT method
-    const transactionHash = await biconomyService.mintNft(
-      smartAccount, 
-      address, 
-      provider, 
-      nftAddress
+    // get appId, receipeId
+    const appId = data.signContractCreateds[0].appId;
+    const receipeId = data.signContractCreateds[0].receipeId;
+    const safeAddress = data.signContractCreateds[0].safeAddress;
+    // get signature
+    const signature  = await pkpWallet.signMessage(`I sign to ${appId}/${receipeId}/${signId.toString()}/${safeAddress} Contract!`);
+    
+    // call addSignature method
+    const response = await addSigNature(
+      appId,
+      receipeId,
+      signId,
+      chainId,
+      safeAddress,
+      signature,
     );
 
     setMinted(true)
 
-    toast.success(`Success! Here is your transaction:${transactionHash} `, {
+    console.log(`Relay Transaction Task ID: https://relay.gelato.digital/tasks/status/${response.taskId}`)
+    toast.success(`Success! Here is your https://relay.gelato.digital/tasks/status/${response.taskId} `, {
       position: "top-right",
       autoClose: 18000,
       hideProgressBar: false,
@@ -78,14 +85,14 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
 
   return(
     <>
-      {address && <h2>SignName:{data.signContractCreateds[0].name}</h2>}
-      {address && <h3>SafeAddress:{data.signContractCreateds[0].safeAddress}</h3>}
+      {address && <h2>SignName: {data.signContractCreateds[0].name}</h2>}
+      {address && <h3>SafeAddress: {data.signContractCreateds[0].safeAddress}</h3>}
       {address && (
         <>
           { (data.changeApproveStatuses[0] == undefined) ? 
             <p>approveStatus: Not Appvoed</p> 
           : 
-            <h3>approveStatus:{data.changeApproveStatuses[0].approveStatus}</h3> 
+            <h3>approveStatus: Approved</h3> 
           }
         </>
       )}
@@ -93,7 +100,7 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
       {address && (
         <div>
           <Document 
-            file={'https://bafybeibawd4uszujdype4emondxzksmbsxputel6tip5ocgr3plv746z3e.ipfs.dweb.link/SIMPLE%20CONTRACT%20AGREEMENT.pdf'} 
+            file={data.signContractCreateds[0].uri} 
             onLoadSuccess={onDocumentLoadSuccess}
           >
             <div style={{ border: 'solid 1px gray'}}>
