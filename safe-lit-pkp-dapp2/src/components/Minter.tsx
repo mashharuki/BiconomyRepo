@@ -4,8 +4,13 @@ import styles from '@/styles/Home.module.css';
 import { BiconomySmartAccountV2 } from "@biconomy/account";
 import { ethers } from "ethers";
 import { useState } from 'react';
+import { Document, Page, pdfjs } from 'react-pdf';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import pdfjsWorkerSrc from '../../pdf-worker';
+import { SignContractInfos } from './../utils/types';
+
+pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc;
 
 const nftAddress = "0x0a7755bDfb86109D9D403005741b415765EAf1Bc";
 
@@ -14,6 +19,7 @@ interface Props {
   smartAccount: BiconomySmartAccountV2,
   address: string,
   provider: ethers.providers.Provider,
+  data: SignContractInfos
 }
 
 /**
@@ -21,8 +27,12 @@ interface Props {
  * @param param0 
  * @returns 
  */
-const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provider }) => {
+const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provider, data }) => {
   const [minted, setMinted] = useState<boolean>(false)
+  const [numPages, setNumPages] = useState(1);
+
+  console.log("safeAddress:", data.signContractCreateds[0].safeAddress)
+  console.log("url:", data.signContractCreateds[0].uri)
 
   /**
    * handleMint
@@ -61,11 +71,38 @@ const Minter: React.FC<Props> = ({ biconomyService, smartAccount, address, provi
     });
   }
 
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
+  };
+
 
   return(
     <>
-      {address && <button onClick={handleMint} className={styles.connect}>Mint NFT</button>}
-      {minted && <a href={`https://testnets.opensea.io/${address}`}> Click to view minted nfts for smart account</a>}
+      {address && <h2>SignName:{data.signContractCreateds[0].name}</h2>}
+      {address && <h3>SafeAddress:{data.signContractCreateds[0].safeAddress}</h3>}
+      {address && (
+        <>
+          { (data.changeApproveStatuses[0] == undefined) ? 
+            <p>approveStatus: Not Appvoed</p> 
+          : 
+            <h3>approveStatus:{data.changeApproveStatuses[0].approveStatus}</h3> 
+          }
+        </>
+      )}
+      {address && (
+        <div>
+          <Document 
+            file={'https://raw.githubusercontent.com/mozilla/pdf.js/ba2edeae/examples/learning/helloworld.pdf'} 
+            onLoadSuccess={onDocumentLoadSuccess}
+            className='w-8'
+          >
+            <div style={{ border: 'solid 1px gray'}}>
+              <Page height={400} pageNumber={numPages} />
+            </div>
+          </Document>
+        </div>
+      )}
+      {address && <button onClick={handleMint} className={styles.connect}>Sign</button>}
       <ToastContainer
         position="top-right"
         autoClose={5000}

@@ -7,8 +7,11 @@ import { ChainId } from '@biconomy/core-types';
 import { ethers } from 'ethers';
 import Head from 'next/head';
 import { useState } from "react";
+import { useQuery } from 'urql';
+import query from '../graphql/query';
 import { Lit } from './../hooks/lit';
 import { RPC_URL } from './../utils/constants';
+import { SignContractInfos } from './../utils/types';
 
 /**
  * Home Component
@@ -20,9 +23,16 @@ export default function Home() {
   const [smartAccount, setSmartAccount] = useState<BiconomySmartAccountV2 | null>(null);
   const [biconomyService, setbiconomyService] = useState<Biconomy | null>(null);
   const [litService, setLitService] = useState<Lit | null>(null);
-  const [chainId, setChainId] = useState<number>(ChainId.POLYGON_MUMBAI)
+  const [chainId, setChainId] = useState<number>(ChainId.BASE_GOERLI_TESTNET)
 
-  // base MUMBAI RPC
+  // execute subgraph query
+  const [result] = useQuery({ query });
+  const { data, fetching, error } = result;
+  const queryResult: SignContractInfos = data;
+
+  console.log("data:", queryResult)
+
+  // base base Goerli RPC
   const provider = new ethers.providers.JsonRpcProvider(RPC_URL);
 
   /**
@@ -144,7 +154,6 @@ export default function Home() {
     }
   };
 
-
   return (
     <>
       <Head>
@@ -170,16 +179,19 @@ export default function Home() {
             Sign In
           </button>
         )}
-        {loading && <p><Loading/></p>}
+        {(loading || fetching ) && <Loading/>}
         {address && <h2>Smart Account: {address}</h2>}
-        {smartAccount && provider && (
-          <Minter 
-            biconomyService={biconomyService!}
-            smartAccount={smartAccount} 
-            address={address} 
-            provider={provider} 
-          />
-        )}
+        <>
+          { data !== undefined && smartAccount && provider && (
+            <Minter 
+              biconomyService={biconomyService!}
+              smartAccount={smartAccount} 
+              address={address} 
+              provider={provider} 
+              data={queryResult}
+            />
+          )}
+        </>
       </main>
     </>
   )
